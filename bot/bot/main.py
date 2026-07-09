@@ -15,19 +15,8 @@ def home():
 def health():
     return 'OK'
 
-@app.route('/send', methods=['POST'])
-def send():
-    text = request.form.get('text', '')
-    if text:
-        asyncio.run(bot.send_message(chat_id=CHAT_ID, text=text))
-        return 'Enviado'
-    return 'Falta texto', 400
-
 async def poll():
     offset = 0
-    off_file = '/tmp/offset.txt'
-    if os.path.exists(off_file):
-        offset = int(open(off_file).read())
     while True:
         try:
             updates = await bot.get_updates(offset=offset+1, timeout=30)
@@ -37,8 +26,6 @@ async def poll():
                     name = u.message.from_user.first_name
                     text = u.message.text
                     print(f'[{name}] {text}', flush=True)
-            with open(off_file, 'w') as f:
-                f.write(str(offset))
             await asyncio.sleep(1)
         except Exception as e:
             print(f'Error: {e}', flush=True)
