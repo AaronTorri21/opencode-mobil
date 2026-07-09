@@ -8,6 +8,14 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.0'
+      - name: Fix Flutter project structure
+        run: |
+          flutter create --project-name opencode_mobile --org com.opencode --platforms android /tmp/flutter_base
+          cp -r /tmp/flutter_base/android/gradle android/
+          cp -r /tmp/flutter_base/android/gradlew android/
+          cp /tmp/flutter_base/android/settings.gradle android/settings.gradle
+          cp /tmp/flutter_base/android/app/build.gradle android/app/build.gradle
+          cp -r /tmp/flutter_base/android/app/src/main/res android/app/src/main/res
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
