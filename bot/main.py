@@ -4,20 +4,26 @@ from telegram import Bot
 
 TOKEN = '8974361808:AAGopgWcPlEGHINuJETOWo6nwoxtEfKc_jM'
 CHAT_ID = 8710878580
-GEMINI_KEY = 'AQ.Ab8RN6I0zr_QOp9ag7lTVj3Z5uqeBqMYxkUtPGexHz_xxPZgBQ'
+GROQ_KEY = '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'
 bot = Bot(token=TOKEN)
 app = Flask(__name__)
 
-def preguntar_gemini(texto):
-    url = f'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}'
-    data = json.dumps({'contents': [{'parts': [{'text': texto}]}]}).encode()
+def preguntar_groq(texto):
+    url = 'https://api.groq.com/openai/v1/chat/completions'
+    data = json.dumps({
+        'model': 'llama-3.3-70b-versatile',
+        'messages': [{'role': 'user', 'content': texto}]
+    }).encode()
     try:
-        req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
+        req = urllib.request.Request(url, data=data, headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {GROQ_KEY}'
+        })
         r = urllib.request.urlopen(req, timeout=30)
         resp = json.loads(r.read())
-        return resp['candidates'][0]['content']['parts'][0]['text']
+        return resp['choices'][0]['message']['content']
     except Exception as e:
-        return f'Error al procesar: {e}'
+        return f'Error: {e}'
 
 @app.route('/')
 def home():
@@ -41,9 +47,9 @@ async def poll():
                     text = u.message.text
                     name = u.message.from_user.first_name
                     print(f'[{name}] {text}', flush=True)
-                    resp = preguntar_gemini(text)
+                    resp = preguntar_groq(text)
                     await bot.send_message(chat_id=CHAT_ID, text=resp)
-                    print(f'[Gemini] Enviada respuesta', flush=True)
+                    print(f'[Groq] Respuesta enviada', flush=True)
             with open(off_file, 'w') as f:
                 f.write(str(offset))
             await asyncio.sleep(1)
