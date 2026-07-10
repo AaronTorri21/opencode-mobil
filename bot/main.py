@@ -1,4 +1,4 @@
-import os
+import os, asyncio
 from flask import Flask, request
 from telegram import Bot
 
@@ -18,15 +18,15 @@ def health():
 def webhook():
     try:
         update = request.get_json()
-        if 'message' in update and 'text' in update['message']:
+        if update and 'message' in update and 'text' in update['message']:
             text = update['message']['text']
             chat_id = update['message']['chat']['id']
             name = update['message']['from']['first_name']
             print(f'[{name}] {text}', flush=True)
-            bot.send_message(chat_id=chat_id, text=f'Dijiste: {text}')
+            asyncio.run(bot.send_message(chat_id=chat_id, text=f'Dijiste: {text}'))
             print(f'[ECO] Respuesta enviada a {chat_id}', flush=True)
     except Exception as e:
-        print(f'Error: {e}', flush=True)
+        print(f'Error webhook: {e}', flush=True)
     return 'OK', 200
 
 if __name__ == '__main__':
