@@ -4,9 +4,9 @@ from telegram import Bot
 
 TOKEN = '8974361808:AAGopgWcPlEGHINuJETOWo6nwoxtEfKc_jM'
 CHAT_ID = 8710878580
-OPENAI_KEY = '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'
 bot = Bot(token=TOKEN)
 app = Flask(__name__)
+OPENAI_KEY = os.environ.get('OPENAI_KEY', '')
 
 def preguntar_openai(texto):
     url = 'https://api.openai.com/v1/chat/completions'
