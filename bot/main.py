@@ -1,4 +1,4 @@
-import os, json, urllib.request
+import os, json, urllib.request, time
 from flask import Flask, request
 
 TOKEN = '8974361808:AAGopgWcPlEGHINuJETOWo6nwoxtEfKc_jM'
@@ -12,18 +12,26 @@ def send_telegram(chat_id, text):
     urllib.request.urlopen(req, timeout=15)
 
 def preguntar_openai(texto):
-    url = 'https://api.openai.com/v1/chat/completions'
-    data = json.dumps({
-        'model': 'gpt-4o-mini',
-        'messages': [{'role': 'user', 'content': texto}]
-    }).encode()
-    req = urllib.request.Request(url, data=data, headers={
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {OPENAI_KEY}'
-    })
-    r = urllib.request.urlopen(req, timeout=30)
-    resp = json.loads(r.read())
-    return resp['choices'][0]['message']['content']
+    for intento in range(5):
+        try:
+            url = 'https://api.openai.com/v1/chat/completions'
+            data = json.dumps({
+                'model': 'gpt-4o-mini',
+                'messages': [{'role': 'user', 'content': texto}]
+            }).encode()
+            req = urllib.request.Request(url, data=data, headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {OPENAI_KEY}'
+            })
+            r = urllib.request.urlopen(req, timeout=30)
+            resp = json.loads(r.read())
+            return resp['choices'][0]['message']['content']
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                time.sleep(10)
+            else:
+                raise
+    return 'Error: Límite de velocidad. Espera un momento y vuelve a intentar.'
 
 @app.route('/')
 def home():
