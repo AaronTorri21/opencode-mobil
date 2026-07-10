@@ -1,4 +1,4 @@
-import os, json, urllib.request, time
+import os, json, urllib.request
 from flask import Flask, request
 
 TOKEN = '8974361808:AAGopgWcPlEGHINuJETOWo6nwoxtEfKc_jM'
@@ -12,26 +12,18 @@ def send_telegram(chat_id, text):
     urllib.request.urlopen(req, timeout=15)
 
 def preguntar_openai(texto):
-    for intento in range(5):
-        try:
-            url = 'https://api.openai.com/v1/chat/completions'
-            data = json.dumps({
-                'model': 'gpt-4o-mini',
-                'messages': [{'role': 'user', 'content': texto}]
-            }).encode()
-            req = urllib.request.Request(url, data=data, headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {OPENAI_KEY}'
-            })
-            r = urllib.request.urlopen(req, timeout=30)
-            resp = json.loads(r.read())
-            return resp['choices'][0]['message']['content']
-        except urllib.error.HTTPError as e:
-            if e.code == 429:
-                time.sleep(10)
-            else:
-                raise
-    return 'Error: Límite de velocidad. Espera un momento y vuelve a intentar.'
+    url = 'https://api.openai.com/v1/chat/completions'
+    data = json.dumps({
+        'model': 'gpt-4o-mini',
+        'messages': [{'role': 'user', 'content': texto}]
+    }).encode()
+    req = urllib.request.Request(url, data=data, headers={
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {OPENAI_KEY}'
+    })
+    r = urllib.request.urlopen(req, timeout=30)
+    resp = json.loads(r.read())
+    return resp['choices'][0]['message']['content']
 
 @app.route('/')
 def home():
@@ -53,11 +45,12 @@ def webhook():
             resp = preguntar_openai(text)
             send_telegram(chat_id, resp)
             print(f'[GPT] Respuesta enviada a {chat_id}', flush=True)
+    except urllib.error.HTTPError as e:
+        if e.code == 429:
+            send_telegram(chat_id, 'Límite de velocidad. Espera 1 minuto y vuelve a intentar.')
+        else:
+            send_telegram(chat_id, f'Error HTTP: {e.code}')
     except Exception as e:
-        try:
-            chat_id = update['message']['chat']['id']
-        except:
-            chat_id = 8710878580
         send_telegram(chat_id, f'Error: {e}')
         print(f'Error webhook: {e}', flush=True)
     return 'OK', 200
