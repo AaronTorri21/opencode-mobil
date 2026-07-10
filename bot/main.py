@@ -4,20 +4,20 @@ from telegram import Bot
 
 TOKEN = '8974361808:AAGopgWcPlEGHINuJETOWo6nwoxtEfKc_jM'
 CHAT_ID = 8710878580
-GROQ_KEY = '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'
+OPENAI_KEY = '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'
 bot = Bot(token=TOKEN)
 app = Flask(__name__)
 
-def preguntar_groq(texto):
-    url = 'https://api.groq.com/openai/v1/chat/completions'
+def preguntar_openai(texto):
+    url = 'https://api.openai.com/v1/chat/completions'
     data = json.dumps({
-        'model': 'llama-3.3-70b-versatile',
+        'model': 'gpt-4o-mini',
         'messages': [{'role': 'user', 'content': texto}]
     }).encode()
     try:
         req = urllib.request.Request(url, data=data, headers={
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {GROQ_KEY}'
+            'Authorization': f'Bearer {OPENAI_KEY}'
         })
         r = urllib.request.urlopen(req, timeout=30)
         resp = json.loads(r.read())
@@ -47,9 +47,9 @@ async def poll():
                     text = u.message.text
                     name = u.message.from_user.first_name
                     print(f'[{name}] {text}', flush=True)
-                    resp = preguntar_groq(text)
+                    resp = preguntar_openai(text)
                     await bot.send_message(chat_id=CHAT_ID, text=resp)
-                    print(f'[Groq] Respuesta enviada', flush=True)
+                    print(f'[GPT] Respuesta enviada', flush=True)
             with open(off_file, 'w') as f:
                 f.write(str(offset))
             await asyncio.sleep(1)
