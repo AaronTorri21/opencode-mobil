@@ -1,11 +1,15 @@
-import os, json, urllib.request, asyncio
+import os, json, urllib.request
 from flask import Flask, request
-from telegram import Bot
 
 TOKEN = '8974361808:AAGopgWcPlEGHINuJETOWo6nwoxtEfKc_jM'
-bot = Bot(token=TOKEN)
-app = Flask(__name__)
 OPENAI_KEY = os.environ.get('OPENAI_KEY', '')
+app = Flask(__name__)
+
+def send_telegram(chat_id, text):
+    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
+    data = json.dumps({'chat_id': chat_id, 'text': text}).encode()
+    req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
+    urllib.request.urlopen(req, timeout=15)
 
 def preguntar_openai(texto):
     url = 'https://api.openai.com/v1/chat/completions'
@@ -39,10 +43,14 @@ def webhook():
             name = update['message']['from']['first_name']
             print(f'[{name}] {text}', flush=True)
             resp = preguntar_openai(text)
-            asyncio.run(bot.send_message(chat_id=chat_id, text=resp))
+            send_telegram(chat_id, resp)
             print(f'[GPT] Respuesta enviada a {chat_id}', flush=True)
     except Exception as e:
-        asyncio.run(bot.send_message(chat_id=chat_id if 'chat_id' in dir() else 8710878580, text=f'Error: {e}'))
+        try:
+            chat_id = update['message']['chat']['id']
+        except:
+            chat_id = 8710878580
+        send_telegram(chat_id, f'Error: {e}')
         print(f'Error webhook: {e}', flush=True)
     return 'OK', 200
 
